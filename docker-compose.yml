@@ -1,0 +1,77 @@
+version: '3'
+
+services:
+
+  # Apache PHP 8
+  apache:
+    build:
+      context: .
+      # PHP 7,5
+      dockerfile: DockerContainersConfig/build/apache/php-7.4/Dockerfile
+    container_name: pet4life_web
+    ports:
+      - '80:80'
+      - '9003:9003'
+    volumes:
+      - './Backend:/var/www/html'
+      - './var:/var/log'
+      - './Backend/.composer/cache:/var/www/.composer/cache'
+      - './DockerContainersConfig/vhosts:/etc/apache2/sites-enabled'
+    environment:
+      XDEBUG_CONFIG: 'remote_host=host.docker.internal remote_port=9003'
+      PHP_IDE_CONFIG: serverName=Docker
+    depends_on:
+      - db
+    links:
+      - db
+    networks:
+      - -pet4life
+
+
+  # MariaDB
+  db:
+    image: 'mariadb:10.7'
+    container_name: pet4life_db
+    ports:
+      - '3306:3306'
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=pet4life
+      - MARIADB_USER=pet4life
+      - MARIADB_PASSWORD=pet4life
+    volumes:
+      - './DockerMariaDB/dbdata:/var/lib/mysql'
+    networks:
+      - -pet4life
+
+
+  # PHPMyAdmin
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: pet4life_phpmyadmin
+    restart: always
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=pet4life
+      - PMA_PASSWORD=pet4life
+    ports:
+      - 8081:80
+    networks:
+      - -pet4life
+
+
+  # MailHog
+  #mailhog:
+  #  image: mailhog/mailhog
+  #  restart: always
+  #  container_name: pet4life_mailhog
+  #  ports:
+  #    - '1025:1025'
+  #    - '8025:8025'
+  #  networks:
+  #    - -pet4life
+
+networks:
+  -pet4life:
+    driver: bridge
